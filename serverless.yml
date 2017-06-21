@@ -1,0 +1,54 @@
+service: datadog-s3-json-sink
+
+plugins:
+  - serverless-python-requirements
+
+package:
+  exclude:
+    - node_modules/**
+    - ddenv/**
+    - tests/**
+    - lib/**
+    - share/**
+    - man/**
+    - bin/**
+    - serverless/**
+  include:
+    - ddsink/**
+
+provider:
+  name: aws
+  runtime: python3.6
+  memorySize: 128
+  environment:
+    APP_KEY: "DATADOG_APP_KEY"
+    API_KEY: "DATADOG_API_KEY"
+
+  iamRoleStatements:
+    -  Effect: "Allow"
+       Action:
+         - "s3:ListBucket"
+         - "s3:PutObject"
+         - "s3:PutObjectAcl"
+       Resource:
+         - Fn::Join: ['', ['arn:aws:s3:::', Ref: "DataDogS3Sink"]]
+    -  Effect: "Allow"
+       Action:
+         - "s3:PutObject"
+         - "s3:PutObjectAcl"
+         - "s3:GetObject"
+         - "s3:DeleteObject"
+       Resource:
+         - Fn::Join: ['', ['arn:aws:s3:::', Ref: "DataDogS3Sink", "/*"]]
+
+functions:
+  lambda_handler:
+    handler: handler.handler
+    timeout: 300
+
+resources:
+  Resources:
+    DataDogS3Sink:
+      Type: "AWS::S3::Bucket"
+      Properties:
+        AccessControl: "AuthenticatedRead"
